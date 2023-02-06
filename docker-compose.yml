@@ -1,0 +1,56 @@
+version: '3'
+services:
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./public:/public
+      - ./site.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      codeigniter_net:
+    ports:
+      - "7333:80"
+    restart: always
+
+  php:
+    image: php:8.1-rc-fpm-alpine3.17
+    build:
+      context: ./public
+      dockerfile: Dockerfile
+    volumes:
+      - ./public:/public
+    depends_on:
+      - database
+    ports:
+      - 9000
+    networks:
+      codeigniter_net:
+
+  database:
+    image: mysql:5.7
+    networks:
+      codeigniter_net:
+    ports:
+      - 3350:3306
+    env_file:
+      - .env
+
+  phpmyadmin:
+    depends_on:
+      - database
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '7373:80'
+    env_file:
+      - .env
+    networks:
+      codeigniter_net:
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_USER}
+      - PMA_HOST=database
+
+networks:
+  codeigniter_net:
